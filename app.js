@@ -2,6 +2,7 @@ const express = require("express");
 const ejs = require("ejs");
 const cors = require("cors");
 require("./config/database");
+require("./config/passport");
 
 const session = require("express-session");
 const passport = require("passport");
@@ -36,11 +37,25 @@ app.get("/", (req, res) => {
 app.get("/login", (req, res) => {
   res.status(201).render("login");
 });
-app.post("/login", (req, res) => {
-  res.status(201).send("sucess");
-});
-app.post("/profile", (req, res) => {
-  res.status(200).send("sucess");
+app.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["profile"] })
+);
+
+app.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/login",
+    successRedirect: "/profile",
+  }),
+  function (req, res) {
+    // Successful authentication, redirect home.
+    res.redirect("/");
+  }
+);
+
+app.get("/profile", (req, res) => {
+  res.status(200).render("profile", { username: req.user.username });
 });
 
 module.exports = app;
