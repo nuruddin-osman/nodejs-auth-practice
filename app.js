@@ -34,7 +34,14 @@ app.get("/", (req, res) => {
   res.render("index");
 });
 
-app.get("/login", (req, res) => {
+const checkLoggedIn = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return res.redirect("/profile");
+  }
+  next();
+};
+
+app.get("/login", checkLoggedIn, (req, res) => {
   res.status(201).render("login");
 });
 app.get(
@@ -54,8 +61,34 @@ app.get(
   }
 );
 
-app.get("/profile", (req, res) => {
+const checkAuthenticate = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect("/login");
+};
+
+app.get("/profile", checkAuthenticate, (req, res) => {
   res.status(200).render("profile", { username: req.user.username });
+});
+
+app.get("/logout", (req, res, next) => {
+  // logout logic
+
+  // clear the user from the session object and save.
+  // this will ensure that re-using the old session id
+  // does not have a logged in user
+  req.session.user = null;
+  req.session.save((err) => {
+    if (err) next(err);
+
+    // regenerate the session, which is good practice to help
+    // guard against forms of session fixation
+    req.session.regenerate((err) => {
+      if (err) next(err);
+      res.redirect("/");
+    });
+  });
 });
 
 module.exports = app;
